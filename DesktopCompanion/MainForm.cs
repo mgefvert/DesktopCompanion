@@ -12,14 +12,14 @@ namespace DesktopCompanion
         private readonly Wallpaper _wallpaper;
         private readonly AppSettings _appSettings;
         private DateTime _lastDate;
-        private HotKeys _hotkey;
+        private HotKeys _hotKey;
 
         public MainForm()
         {
             InitializeComponent();
 
             _appSettings = new AppSettings();
-            _wallpaper = new Wallpaper(_appSettings, new DirectoryInfo(@"D:\dropbox\misc\dual"));
+            _wallpaper = new Wallpaper(_appSettings, new DirectoryInfo(_appSettings.WallpaperFolder));
             ChangeWallpaperTimer.Enabled = true;
         }
 
@@ -33,12 +33,12 @@ namespace DesktopCompanion
         {
             base.OnHandleCreated(e);
 
-            _hotkey?.Clear();
+            _hotKey?.Clear();
 
-            _hotkey = new HotKeys(Handle);
-            _hotkey.Add(WinApi.MOD_WIN, (uint)Keys.Multiply, () => ChangeWallpaper(1));
-            _hotkey.Add(WinApi.MOD_WIN, (uint)Keys.Divide, () => ChangeWallpaper(-1));
-            if (!_hotkey.AllSucceeded())
+            _hotKey = new HotKeys(Handle);
+            _hotKey.Add(WinApi.MOD_WIN, (uint)Keys.Multiply, () => ChangeWallpaper(1));
+            _hotKey.Add(WinApi.MOD_WIN, (uint)Keys.Divide, () => ChangeWallpaper(-1));
+            if (!_hotKey.AllSucceeded())
                 MessageBox.Show("Couldn't register hotkeys", "Desktop Companion", MessageBoxButtons.OK, MessageBoxIcon.Warning);
         }
 
@@ -78,7 +78,7 @@ namespace DesktopCompanion
                 ChangeWallpaperTimer.Enabled = true;
             }
             else if (m.Msg == (int)WinApi.WM.HOTKEY)
-                _hotkey.Process(ref m);
+                _hotKey.Process(ref m);
 
             base.WndProc(ref m);
         }

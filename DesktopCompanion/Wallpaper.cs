@@ -9,6 +9,8 @@ using DotNetCommons.Temporal;
 using DotNetCommons.Text;
 using DotNetCommons.WinForms;
 
+// ReSharper disable LocalizableElement
+
 namespace DesktopCompanion
 {
     public class Wallpaper
@@ -38,12 +40,20 @@ namespace DesktopCompanion
         public void Rescan()
         {
             _list.Clear();
-            _list.AddRange(
-                _directory.EnumerateFiles("*.jpg", SearchOption.TopDirectoryOnly)
-                    .Concat(_directory.EnumerateFiles("*.jpeg", SearchOption.TopDirectoryOnly))
-                    .Concat(_directory.EnumerateFiles("*.png", SearchOption.TopDirectoryOnly))
-                    .Select(x => x.Name)
-            );
+            try
+            {
+                _list.AddRange(
+                    _directory.EnumerateFiles("*.jpg", SearchOption.TopDirectoryOnly)
+                        .Concat(_directory.EnumerateFiles("*.jpeg", SearchOption.TopDirectoryOnly))
+                        .Concat(_directory.EnumerateFiles("*.png", SearchOption.TopDirectoryOnly))
+                        .Select(x => x.Name)
+                );
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show($"No wallpaper files found in {_directory.FullName} : {e.Message}");
+                throw;
+            }
         }
 
         public void Update()
@@ -86,11 +96,11 @@ namespace DesktopCompanion
 
             var intensity = CalculateIntensity(bitmap, r);
 
-            using var bigFont = new Font("Archer Book", 48);
+            using var bigFont = new Font(_appSettings.DesktopFont, 48);
             var bigHeight = (int)Math.Round(bigFont.GetHeight(), MidpointRounding.AwayFromZero);
 
-            using var smallFont = new Font("Archer Book", 14);
-            using var smallBoldFont = new Font("Archer Book", 14, FontStyle.Bold);
+            using var smallFont = new Font(_appSettings.DesktopFont, 14);
+            using var smallBoldFont = new Font(_appSettings.DesktopFont, 14, FontStyle.Bold);
             var smallHeight = (int)Math.Round(smallFont.GetHeight(), MidpointRounding.AwayFromZero);
 
             using var alphaBrush = new SolidBrush(intensity > 0.5 ? Color.FromArgb(96, 0, 0, 0) : Color.FromArgb(96, 255, 255, 255));
