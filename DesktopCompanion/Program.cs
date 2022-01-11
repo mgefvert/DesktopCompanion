@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Windows.Forms;
+using DotNetCommons;
 
 namespace DesktopCompanion
 {
@@ -17,7 +18,7 @@ namespace DesktopCompanion
 
         private static void HandleThreadException(object sender, ThreadExceptionEventArgs e)
         {
-            MessageBox.Show(e.Exception.Message, e.Exception.GetType().Name, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(e.Exception.GetDetailedInformation(false), e.Exception.GetType().Name, MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 }
