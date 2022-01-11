@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
@@ -33,8 +34,9 @@ namespace DesktopCompanion
 
         private string MakeScreenInfo()
         {
-            return string.Join("|", Screen.AllScreens.Length,
-                SystemInformation.VirtualScreen.Width, SystemInformation.VirtualScreen.Height, CurrentFileName);
+            return string.Join("|", 
+                Screen.AllScreens.Length, SystemInformation.VirtualScreen.Width, SystemInformation.VirtualScreen.Height, 
+                CurrentFileName, DateTime.UtcNow.ToString("yyyyMMddHH"));
         }
 
         public void Rescan()
@@ -42,18 +44,23 @@ namespace DesktopCompanion
             _list.Clear();
             try
             {
-                _list.AddRange(
-                    _directory.EnumerateFiles("*.jpg", SearchOption.TopDirectoryOnly)
-                        .Concat(_directory.EnumerateFiles("*.jpeg", SearchOption.TopDirectoryOnly))
-                        .Concat(_directory.EnumerateFiles("*.png", SearchOption.TopDirectoryOnly))
-                        .Select(x => x.Name)
-                );
+                _list.AddRange(GetFileList());
             }
             catch (Exception e)
             {
                 MessageBox.Show($"No wallpaper files found in {_directory.FullName} : {e.Message}");
                 throw;
             }
+        }
+
+        private List<string> GetFileList()
+        {
+            return _directory.EnumerateFiles("*.jpg", SearchOption.TopDirectoryOnly)
+                .Concat(_directory.EnumerateFiles("*.jpeg", SearchOption.TopDirectoryOnly))
+                .Concat(_directory.EnumerateFiles("*.png", SearchOption.TopDirectoryOnly))
+                .Select(x => x.Name)
+                .OrderBy(x => x)
+                .ToList();
         }
 
         public void Update()
@@ -67,6 +74,7 @@ namespace DesktopCompanion
             if (MakeScreenInfo() == _screenInfo)
                 return false;
 
+            Rescan();
             Update();
             return true;
         }
@@ -99,6 +107,9 @@ namespace DesktopCompanion
             using var bigFont = new Font(_appSettings.DesktopFont, 48);
             var bigHeight = (int)Math.Round(bigFont.GetHeight(), MidpointRounding.AwayFromZero);
 
+            using var mediumFont = new Font(_appSettings.DesktopFont, 32);
+            var mediumHeight = (int)Math.Round(mediumFont.GetHeight(), MidpointRounding.AwayFromZero);
+
             using var smallFont = new Font(_appSettings.DesktopFont, 14);
             using var smallBoldFont = new Font(_appSettings.DesktopFont, 14, FontStyle.Bold);
             var smallHeight = (int)Math.Round(smallFont.GetHeight(), MidpointRounding.AwayFromZero);
@@ -106,11 +117,13 @@ namespace DesktopCompanion
             using var alphaBrush = new SolidBrush(intensity > 0.5 ? Color.FromArgb(96, 0, 0, 0) : Color.FromArgb(96, 255, 255, 255));
             using var solidBrush = new SolidBrush(intensity > 0.5 ? Color.FromArgb(192, 0, 0, 0) : Color.FromArgb(192, 255, 255, 255));
 
-            graphics.DrawString(DateTime.Today.ToString("dddd d MMMM yyyy").StartUppercase(), bigFont, alphaBrush, 128, y);
-            y += bigHeight;
+            graphics.DrawString(DateTime.Today.ToString("dddd d MMMM yyyy").StartUppercase(), mediumFont, alphaBrush, 128, y);
+            y += mediumHeight;
+            graphics.DrawString(GetDailySaying(), smallFont, alphaBrush, 140, y);
 
             var holidays = _appSettings.Holidays.ToList();
             holidays.AddRange(new UnitedStatesHolidays().All);
+            y += (int)(smallHeight * 1.8);
 
             var upcoming = holidays.Where(h => h.DaysLeft() < 60).OrderBy(h => h.DaysLeft()).Take(5).ToArray();
             foreach (var holiday in upcoming)
@@ -123,6 +136,24 @@ namespace DesktopCompanion
                 graphics.DrawString(holiday.Name, font, brush, 360, y);
                 y += smallHeight;
             }
+
+            y = (int)(size.Height * 0.2);
+            graphics.DrawString("Week " + ISOWeek.GetWeekOfYear(DateTime.Today) + ", " + DateTime.Today.Year, bigFont, alphaBrush, 128, y);
+        }
+
+        private string GetDailySaying()
+        {
+            return DateTime.Today.DayOfWeek switch
+            {
+                DayOfWeek.Monday => "What a wonderful Monday, Sir!",
+                DayOfWeek.Tuesday => "A Tuesday is a great day to be alive, Sir!",
+                DayOfWeek.Wednesday => "Ah, Wednesdays, the joy of the week, Sir!",
+                DayOfWeek.Thursday => "Thursday - the most average day of the week, Sir!",
+                DayOfWeek.Friday => "Today is Friday, Sir! A most excellent day!",
+                DayOfWeek.Saturday => "A day of relaxation and fun, Sir!",
+                DayOfWeek.Sunday => "A holy day, Sir, good for soul and spirit!",
+                _ => throw new ArgumentOutOfRangeException()
+            };
         }
 
         private static unsafe double CalculateIntensity(Bitmap bitmap, Rectangle rect)
