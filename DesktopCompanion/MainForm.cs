@@ -11,7 +11,6 @@ namespace DesktopCompanion
     {
         private readonly Wallpaper _wallpaper;
         private readonly AppSettings _appSettings;
-        private DateTime _lastDate;
         private HotKeys _hotKey;
 
         public MainForm()
@@ -63,24 +62,25 @@ namespace DesktopCompanion
 
         private void DailyTimer_Tick(object sender, EventArgs e)
         {
-            if (DateTime.Today <= _lastDate)
-                return;
-
-            _lastDate = DateTime.Today;
-            _wallpaper.Update();
+            _wallpaper.UpdateIfChanged();
         }
 
         protected override void WndProc(ref Message m)
         {
             if (m.Msg == (int)WinApi.WM.DISPLAYCHANGE)
-            {
-                ChangeWallpaperTimer.Enabled = false;
-                ChangeWallpaperTimer.Enabled = true;
-            }
+                ScheduleWallpaperTimer();
+            else if (m.Msg == (int)WinApi.WM.POWERBROADCAST && m.WParam == (IntPtr)WinApi.PBT_APMRESUMEAUTOMATIC)
+                ScheduleWallpaperTimer();
             else if (m.Msg == (int)WinApi.WM.HOTKEY)
                 _hotKey.Process(ref m);
 
             base.WndProc(ref m);
+        }
+
+        private void ScheduleWallpaperTimer()
+        {
+            ChangeWallpaperTimer.Enabled = false;
+            ChangeWallpaperTimer.Enabled = true;
         }
     }
 }
