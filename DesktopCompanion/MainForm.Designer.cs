@@ -31,18 +31,12 @@ namespace DesktopCompanion
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
-            this.ChangeWallpaperTimer = new System.Windows.Forms.Timer(this.components);
             this.notifyIcon1 = new System.Windows.Forms.NotifyIcon(this.components);
             this.AppMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.DailyTimer = new System.Windows.Forms.Timer(this.components);
             this.AppMenuStrip.SuspendLayout();
             this.SuspendLayout();
-            // 
-            // ChangeWallpaperTimer
-            // 
-            this.ChangeWallpaperTimer.Interval = 1000;
-            this.ChangeWallpaperTimer.Tick += new System.EventHandler(this.ChangeWallpaperTimer_Tick);
             // 
             // notifyIcon1
             // 
@@ -56,12 +50,12 @@ namespace DesktopCompanion
             this.AppMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.exitToolStripMenuItem});
             this.AppMenuStrip.Name = "contextMenuStrip1";
-            this.AppMenuStrip.Size = new System.Drawing.Size(181, 48);
+            this.AppMenuStrip.Size = new System.Drawing.Size(94, 26);
             // 
             // exitToolStripMenuItem
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(93, 22);
             this.exitToolStripMenuItem.Text = "E&xit";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.AppMenuExit_Click);
             // 
@@ -84,8 +78,6 @@ namespace DesktopCompanion
         }
 
         #endregion
-
-        private System.Windows.Forms.Timer ChangeWallpaperTimer;
         private System.Windows.Forms.NotifyIcon notifyIcon1;
         private System.Windows.Forms.ContextMenuStrip AppMenuStrip;
         private System.Windows.Forms.ToolStripMenuItem exitToolStripMenuItem;
