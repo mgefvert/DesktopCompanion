@@ -16,7 +16,7 @@ namespace DesktopCompanion;
 
 public class Wallpaper
 {
-    private static readonly Color DefaultColor = Color.FromArgb(32, 48, 64);
+    private static readonly Color DefaultColor = Color.FromArgb(32, 40, 48);
 
     private readonly Dictionary<DayOfWeek, string[]> _messages = new()
     {
@@ -68,6 +68,7 @@ public class Wallpaper
     private readonly AppSettings _appSettings;
     private readonly DirectoryInfo _directory;
     private readonly List<string> _list = new();
+    public decimal Intensity = 1.0m;
 
     public string CurrentFileName => _list.Count == 0
         ? null
@@ -83,7 +84,7 @@ public class Wallpaper
     internal string MakeScreenInfo()
     {
         return string.Join("|",
-            Screen.AllScreens.Length, SystemInformation.VirtualScreen.Width, SystemInformation.VirtualScreen.Height,
+            Screen.AllScreens.Length, SystemInformation.VirtualScreen.Width, SystemInformation.VirtualScreen.Height, Intensity,
             CurrentFileName, DateTime.UtcNow.ToString("yyyyMMddHH"));
     }
 
@@ -156,6 +157,9 @@ public class Wallpaper
 
         g.DrawImage(source, 0, 0, source.Width, source.Height);
 
+        if (Intensity != 1)
+            ChangeIntensity(bmp, Intensity);
+
         PaintInformation(bmp, g, source.Size);
 
         var wallpaperFileName = Path.Combine(Path.GetTempPath(), "DesktopCompanion.jpg");
@@ -197,8 +201,9 @@ public class Wallpaper
         var upcoming = holidays.Where(h => h.DaysLeft() < 60).OrderBy(h => h.DaysLeft()).Take(5).ToArray();
         foreach (var holiday in upcoming)
         {
-            var font = holiday.Name.Contains("*") ? smallBoldFont : smallFont;
-            var brush = holiday.Name.Contains("*") ? solidBrush : alphaBrush;
+            var asterisk = holiday.Name?.Contains("*") ?? false;
+            var font = asterisk ? smallBoldFont : smallFont;
+            var brush = asterisk ? solidBrush : alphaBrush;
 
             graphics.DrawString(holiday.NextDate.ToString("ddd d MMMM").StartUppercase(), font, brush, 140, y);
             graphics.DrawString(holiday.DaysLeft() + " d", font, brush, 310, y);
@@ -208,6 +213,12 @@ public class Wallpaper
 
         y = (int)(size.Height * 0.2);
         graphics.DrawString("Week " + ISOWeek.GetWeekOfYear(DateTime.Today) + ", " + DateTime.Today.Year, bigFont, alphaBrush, 128, y);
+
+        if (Intensity != 1.0m)
+        {
+            y += bigHeight;
+            graphics.DrawString($"Intensity {Intensity:P0}", smallFont, alphaBrush, 140, y);
+        }
     }
 
     private string GetDailySaying()
@@ -216,6 +227,28 @@ public class Wallpaper
         var weekNo = (int)DateTime.Today.ToOADate() / 7;
 
         return sayings[weekNo % sayings.Length];
+    }
+
+    private static unsafe void ChangeIntensity(Bitmap bitmap, decimal intensity)
+    {
+        var factor = (int)(intensity * 256);
+        var size = bitmap.Size;
+        var rect = new Rectangle(0, 0, size.Width, size.Height);
+
+        var bits = bitmap.LockBits(rect, ImageLockMode.ReadWrite, PixelFormat.Format24bppRgb);
+        try
+        {
+            var ptr = (byte*)bits.Scan0;
+            for (var y = 0; y < size.Height; y++)
+            {
+                for (var i = 0; i < size.Width * 3; i++, ptr++)
+                    *ptr = (byte)((*ptr) * factor / 256);
+            }
+        }
+        finally
+        {
+            bitmap.UnlockBits(bits);
+        }
     }
 
     private static unsafe double CalculateIntensity(Bitmap bitmap, Rectangle rect)

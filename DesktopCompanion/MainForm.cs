@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using DotNetCommons;
 using DotNetCommons.Text;
 using DotNetCommons.WinForms;
 
@@ -24,7 +25,7 @@ public partial class MainForm : Form
         _appSettings = new AppSettings();
         _wallpaper = new Wallpaper(_appSettings, new DirectoryInfo(_appSettings.WallpaperFolder));
         DailyTimer.Enabled = true;
-        UpdateWallpaper(false);
+        UpdateWallpaper(false, 0, 0);
     }
 
     protected override void OnHandleCreated(EventArgs e)
@@ -34,8 +35,10 @@ public partial class MainForm : Form
         _hotKey?.Clear();
 
         _hotKey = new HotKeys(Handle);
-        _hotKey.Add(WinApi.MOD_WIN, (uint)Keys.Multiply, () => UpdateWallpaper(false, 1));
-        _hotKey.Add(WinApi.MOD_WIN, (uint)Keys.Divide, () => UpdateWallpaper(false, -1));
+        _hotKey.Add(WinApi.MOD_WIN, (uint)Keys.Multiply, () => UpdateWallpaper(false, 1, 0));
+        _hotKey.Add(WinApi.MOD_WIN, (uint)Keys.Divide, () => UpdateWallpaper(false, -1, 0));
+        _hotKey.Add(WinApi.MOD_WIN | WinApi.MOD_SHIFT, (uint)Keys.Multiply, () => UpdateWallpaper(false, 0, 0.2m));
+        _hotKey.Add(WinApi.MOD_WIN | WinApi.MOD_SHIFT, (uint)Keys.Divide, () => UpdateWallpaper(false, 0, -0.2m));
 
         if (!_hotKey.AllSucceeded())
             MessageBox.Show("Couldn't register hotkeys", "Desktop Companion", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -54,12 +57,13 @@ public partial class MainForm : Form
     private void DailyTimer_Tick(object sender, EventArgs e)
     {
         notifyIcon1.Text = (_wallpaper.ScreenInfo + Environment.NewLine + _wallpaper.MakeScreenInfo()).Left(127);
-        UpdateWallpaper(false);
+        UpdateWallpaper(false, 0, 0);
     }
 
-    private void UpdateWallpaper(bool delay, int modifier = 0)
+    private void UpdateWallpaper(bool delay, int modifier, decimal intensityDelta)
     {
         _appSettings.WallpaperOffset += modifier;
+        _wallpaper.Intensity = (_wallpaper.Intensity + intensityDelta).Limit(0.2m, 1.0m);
         if (Handle == IntPtr.Zero)
             CreateHandle();
 
@@ -85,9 +89,9 @@ public partial class MainForm : Form
     protected override void WndProc(ref Message m)
     {
         if (m.Msg == (int)WinApi.WM.DISPLAYCHANGE)
-            UpdateWallpaper(true);
+            UpdateWallpaper(true, 0, 0);
         else if (m.Msg == (int)WinApi.WM.POWERBROADCAST && m.WParam == (IntPtr)WinApi.PBT_APMRESUMEAUTOMATIC)
-            UpdateWallpaper(true);
+            UpdateWallpaper(true, 0, 0);
         else if (m.Msg == (int)WinApi.WM.HOTKEY)
             _hotKey.Process(ref m);
 
