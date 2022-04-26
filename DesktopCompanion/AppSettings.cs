@@ -1,8 +1,8 @@
-﻿using System;
+﻿using DotNetCommons.Temporal;
+using Microsoft.Win32;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using DotNetCommons.Temporal;
-using Microsoft.Win32;
 
 namespace DesktopCompanion;
 
@@ -33,10 +33,22 @@ public class AppSettings
         set => _regKeyDesktopCompanion.SetValue(nameof(DesktopFont), value);
     }
 
+    public decimal Intensity
+    {
+        get => (int)(_regKeyDesktopCompanion.GetValue(nameof(Intensity), 100) ?? 100) / 100m;
+        set => _regKeyDesktopCompanion.SetValue(nameof(Intensity), (int)(value * 100));
+    }
+
     public string WallpaperFolder
     {
         get => (string)_regKeyDesktopCompanion.GetValue(nameof(WallpaperFolder), null);
         set => _regKeyDesktopCompanion.SetValue(nameof(WallpaperFolder), value);
+    }
+
+    public string WallpaperFolderArchitect
+    {
+        get => (string)_regKeyDesktopCompanion.GetValue(nameof(WallpaperFolderArchitect), null);
+        set => _regKeyDesktopCompanion.SetValue(nameof(WallpaperFolderArchitect), value);
     }
 
     public int WallpaperOffset
@@ -47,5 +59,7 @@ public class AppSettings
 
     public IEnumerable<Holiday> Holidays =>
         _regKeyDesktopCompanionHolidays.GetValueNames()
-            .Select(x => Holiday.Create((string)_regKeyDesktopCompanionHolidays.GetValue(x)));
+            .Select(x => (string)_regKeyDesktopCompanionHolidays.GetValue(x))
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(Holiday.Create);
 }

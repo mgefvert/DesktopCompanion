@@ -1,11 +1,10 @@
-﻿using System;
-using System.IO;
+﻿using DotNetCommons;
+using DotNetCommons.Text;
+using DotNetCommons.WinForms;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using DotNetCommons;
-using DotNetCommons.Text;
-using DotNetCommons.WinForms;
 
 // ReSharper disable LocalizableElement
 
@@ -23,7 +22,7 @@ public partial class MainForm : Form
         InitializeComponent();
 
         _appSettings = new AppSettings();
-        _wallpaper = new Wallpaper(_appSettings, new DirectoryInfo(_appSettings.WallpaperFolder));
+        _wallpaper = new Wallpaper(_appSettings);
         DailyTimer.Enabled = true;
         UpdateWallpaper(false, 0, 0);
     }
@@ -63,7 +62,7 @@ public partial class MainForm : Form
     private void UpdateWallpaper(bool delay, int modifier, decimal intensityDelta)
     {
         _appSettings.WallpaperOffset += modifier;
-        _wallpaper.Intensity = (_wallpaper.Intensity + intensityDelta).Limit(0.2m, 1.0m);
+        _appSettings.Intensity = (_appSettings.Intensity + intensityDelta).Limit(0.2m, 1.0m);
         if (Handle == IntPtr.Zero)
             CreateHandle();
 
