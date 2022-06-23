@@ -5,7 +5,9 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Windows.Forms;
 
 namespace DesktopCompanion;
 
@@ -116,5 +118,19 @@ internal static class DrawingHelpers
         {
             bitmap.UnlockBits(bits);
         }
+    }
+
+    public static void DrawOverlay(Bitmap bitmap, string filename)
+    {
+        if (!File.Exists(filename))
+            return;
+
+        using var overlay = Image.FromFile(filename);
+        using var graphics = Graphics.FromImage(bitmap);
+
+        var monitorSize = new Size(Screen.PrimaryScreen.Bounds.Width, Screen.PrimaryScreen.Bounds.Height);
+        var position = new Point((monitorSize.Width - overlay.Width) / 2, (monitorSize.Height - overlay.Height) / 2);
+
+        graphics.DrawImageUnscaled(overlay, position);
     }
 }

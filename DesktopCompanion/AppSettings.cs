@@ -14,6 +14,8 @@ public class AppSettings
     private readonly RegistryKey _regKeyDesktopCompanion;
     private readonly RegistryKey _regKeyDesktopCompanionHolidays;
 
+    public Dictionary<string, string> Overlays { get; } = new(StringComparer.CurrentCultureIgnoreCase);
+
     public AppSettings()
     {
         var hive = Registry.CurrentUser;
@@ -25,6 +27,14 @@ public class AppSettings
 
         DesktopFont ??= "Bahnschrift";
         WallpaperFolder ??= Environment.ExpandEnvironmentVariables("%USERPROFILE%\\Wallpapers");
+
+        var key = hive.OpenSubKey(@"Software\Gefvert\DesktopCompanion\Overlays");
+        foreach (var name in key?.GetValueNames() ?? Array.Empty<string>())
+        {
+            var value = (string)key!.GetValue(name);
+            if (!string.IsNullOrEmpty(value))
+                Overlays[name] = value;
+        }
     }
 
     public string DesktopFont

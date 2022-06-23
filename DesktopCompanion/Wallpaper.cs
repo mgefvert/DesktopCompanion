@@ -1,9 +1,13 @@
 ﻿using DotNetCommons.WinForms;
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
+using DotNetCommons;
+using DotNetCommons.Text;
 
 // ReSharper disable LocalizableElement
 
@@ -37,9 +41,31 @@ public class Wallpaper
 
     internal string MakeScreenInfo()
     {
+        var overlayImage = GetOverlayImage();
+
         return string.Join("|",
             Screen.AllScreens.Length, SystemInformation.VirtualScreen.Width, SystemInformation.VirtualScreen.Height, _appSettings.Intensity,
-            CurrentModeIndex, CurrentMode.State, DateTime.UtcNow.ToString("yyyyMMddHH"));
+            CurrentModeIndex, CurrentMode.State, DateTime.UtcNow.ToString("yyyyMMddHH"), overlayImage);
+    }
+
+    private string GetOverlayImage()
+    {
+        var process = Process.GetProcesses()
+            .Select(x => x.ProcessName.ToLower())
+            .Distinct()
+            .ToHashSet();
+
+        string overlayImage = null;
+        foreach (var (overlay, image) in _appSettings.Overlays)
+        {
+            if (process.Contains(overlay.ToLower()))
+            {
+                overlayImage = image;
+                break;
+            }
+        }
+
+        return overlayImage;
     }
 
     public bool UpdateIfChanged()
@@ -48,7 +74,7 @@ public class Wallpaper
             return false;
 
         CurrentMode.Rescan();
-
+        
         try
         {
             ScreenInfo = MakeScreenInfo();
@@ -66,8 +92,14 @@ public class Wallpaper
         using var bmp = new Bitmap(SystemInformation.VirtualScreen.Width, SystemInformation.VirtualScreen.Height, PixelFormat.Format24bppRgb);
         using var graphics = Graphics.FromImage(bmp);
 
-        mode.DrawImage(bmp, graphics, _appSettings.Intensity);
+        var overlay = GetOverlayImage();
+        var intensity = overlay.IsSet() ? _appSettings.Intensity.Limit(0m, 0.4m) : _appSettings.Intensity;
+
+        mode.DrawImage(bmp, graphics, intensity);
         DrawingHelpers.PaintInformation(bmp, graphics, bmp.Size, _appSettings, mode.Title);
+
+        if (overlay.IsSet())
+            DrawingHelpers.DrawOverlay(bmp, overlay);
 
         bmp.Save(target.FullName);
     }
